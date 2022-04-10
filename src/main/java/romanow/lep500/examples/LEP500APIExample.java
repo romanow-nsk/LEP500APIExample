@@ -1,16 +1,14 @@
 package romanow.lep500.examples;
 
 import com.google.gson.Gson;
+import com.mongodb.BasicDBObject;
 import retrofit2.Call;
 import romanow.abc.core.DBRequest;
 import romanow.abc.core.UniException;
 import romanow.abc.core.constants.OidList;
 import romanow.abc.core.constants.Values;
 import romanow.abc.core.entity.subjectarea.MeasureFile;
-import romanow.abc.core.mongo.DBQueryInt;
-import romanow.abc.core.mongo.DBQueryList;
-import romanow.abc.core.mongo.DBXStream;
-import romanow.abc.core.mongo.I_DBQuery;
+import romanow.abc.core.mongo.*;
 import romanow.abc.desktop.APICall;
 import romanow.abc.desktop.console.ConsoleClient;
 import romanow.abc.desktop.console.ConsoleLogin;
@@ -18,6 +16,7 @@ import romanow.lep500.AnalyseResult;
 import romanow.lep500.LEP500Params;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class LEP500APIExample {
     private boolean isOn=false;
@@ -44,10 +43,14 @@ public class LEP500APIExample {
             return "Клиент: "+e.toString();
         }
     }
+    private final static long userOid=2;    // Романов-2 Роденко-4 Петрова-3
     public void loadFiles(){
         if (!isOn)
             return;
-        DBQueryList query =  new DBQueryList().add(new DBQueryInt(I_DBQuery.ModeNEQ,"expertResult",0));
+        DBQueryList query =  new DBQueryList().
+                add(new DBQueryInt(I_DBQuery.ModeNEQ,"expertResult",0)).
+                add(new DBQueryLong("userId",userOid)).
+                add(new DBQueryBoolean("valid",true));
         final String xmlQuery = new DBXStream().toXML(query);
         new APICall<ArrayList<DBRequest>>(null){
             @Override
