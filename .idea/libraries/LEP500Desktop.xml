@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="LEP500Desktop">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/LEP500Desktop.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/LEP500Desktop.jar!/" />
+    </SOURCES>
+  </library>
+</component>

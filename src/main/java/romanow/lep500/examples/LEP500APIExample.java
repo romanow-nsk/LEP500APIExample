@@ -14,6 +14,8 @@ import romanow.abc.desktop.console.ConsoleClient;
 import romanow.abc.desktop.console.ConsoleLogin;
 import romanow.lep500.AnalyseResult;
 import romanow.lep500.LEP500Params;
+import romanow.lep500.fft.Extreme;
+import romanow.lep500.fft.ExtremeList;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -118,8 +120,14 @@ public class LEP500APIExample {
         example.loadParamsList();
         System.out.println(example.params);
         example.analyseAll(0);
-        for(AnalyseResult result : example.results)
+        for(AnalyseResult result : example.results){
             System.out.println(result.toStringFull());
-        // Все оцененные ------------------------------------------------------------------------------------------
+            for (ExtremeList ff : result.data){
+                System.out.println("Тип пиков "+ff.getExtremeMode());
+                for(Extreme extreme : ff.data()){
+                }
+            }
+        }
     }
+        // Все оцененные ------------------------------------------------------------------------------------------
 }
