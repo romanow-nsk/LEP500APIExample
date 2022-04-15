@@ -152,6 +152,7 @@ public class LEP500APIExample {
                         }
                     }
                 }
+            ss.append(","+measureFiles.get(i).getExpertResult());
             out.add(ss.toString());
             }
         return out;
