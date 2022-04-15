@@ -36,7 +36,7 @@ public class LEP500APIExample {
         Values.init();
         client = new ConsoleClient();
         client.setClientIP("217.71.138.9");
-        client.setClientPort(4567);
+        client.setClientPort(5001);
         try {
             client.startClient();
             ArrayList<String> params = new ArrayList<>();
