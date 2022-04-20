@@ -116,6 +116,20 @@ public class LEP500APIExample {
             }
         };
     }
+    public void loadFilesByExpertNote(int note){
+        if (!isOn)
+            return;
+        new APICall<ArrayList<MeasureFile>>(null){
+            @Override
+            public Call<ArrayList<MeasureFile>> apiFun() {
+                return client.getService2().getMeasureSelection(client.getDebugToken(),note,0,"","");
+            }
+            @Override
+            public void onSucess(ArrayList<MeasureFile> oo) {
+                measureFiles = oo;
+            }
+        };
+    }
     public void loadParamsList(){
         params.clear();
         new APICall<ArrayList<DBRequest>>(null){
@@ -216,6 +230,10 @@ public class LEP500APIExample {
         example.loadFilesBySelection(3);
         example.analyseAndShow();
         example.loadFilesByLineName("cm-330");
+        example.analyseAndShow();
+        example.loadFilesByExpertNote(Values.ESFailure);
+        example.analyseAndShow();
+        example.loadFilesByExpertNote(Values.ESWarning);
         example.analyseAndShow();
         //-----------------------------------------------
         //HashMap<Integer, ConstValue> typeMap = Values.constMap().getGroupMapByValue("EXMode");
