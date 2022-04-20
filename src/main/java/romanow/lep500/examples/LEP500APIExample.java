@@ -8,6 +8,8 @@ import romanow.abc.core.UniException;
 import romanow.abc.core.constants.ConstValue;
 import romanow.abc.core.constants.OidList;
 import romanow.abc.core.constants.Values;
+import romanow.abc.core.entity.EntityLink;
+import romanow.abc.core.entity.subjectarea.MFSelection;
 import romanow.abc.core.entity.subjectarea.MeasureFile;
 import romanow.abc.core.mongo.*;
 import romanow.abc.desktop.APICall;
@@ -52,7 +54,7 @@ public class LEP500APIExample {
             }
         }
     private final static long userOid=2;    // Романов-2 Роденко-4 Петрова-3
-    public void loadFiles(){
+    public void loadFilesByQuery(){
         if (!isOn)
             return;
         DBQueryList query =  new DBQueryList().
@@ -74,8 +76,43 @@ public class LEP500APIExample {
                         measureFiles.add(ss);
                     } catch (UniException e) {
                         System.out.println(e);
+                        }
                     }
                 }
+            };
+        }
+    public void loadFilesBySelection(long oid){
+        if (!isOn)
+            return;
+        new APICall<DBRequest>(null){
+            @Override
+            public Call<DBRequest> apiFun() {
+                return client.getService().getEntity(client.getDebugToken(),"MFSelection",oid,2);
+                }
+            @Override
+            public void onSucess(DBRequest oo) {
+                measureFiles.clear();
+                try {
+                    MFSelection selection = (MFSelection)oo.get(new Gson());
+                    for(EntityLink<MeasureFile> fileLink : selection.getFiles())
+                    measureFiles.add(fileLink.getRef());
+                    } catch (UniException e) {
+                        System.out.println(e);
+                        }
+                    }
+                };
+        }
+    public void loadFilesByLineName(String line){
+        if (!isOn)
+            return;
+        new APICall<ArrayList<MeasureFile>>(null){
+            @Override
+            public Call<ArrayList<MeasureFile>> apiFun() {
+                return client.getService2().getMeasureSelection(client.getDebugToken(),0,0,line,"");
+            }
+            @Override
+            public void onSucess(ArrayList<MeasureFile> oo) {
+                measureFiles = oo;
             }
         };
     }
@@ -101,10 +138,11 @@ public class LEP500APIExample {
         };
     }
     public void analyseAll(int paramIdx){
+        results.clear();
         OidList list = new OidList();
         for(MeasureFile ss : measureFiles){
             list.oids.add(ss.getOid());
-        }
+            }
         new APICall<ArrayList<AnalyseResult>>(null){
             @Override
             public Call<ArrayList<AnalyseResult>> apiFun() {
@@ -158,20 +196,28 @@ public class LEP500APIExample {
         return out;
         }
 
-    public static void main(String ss[]){
-        LEP500APIExample example = new LEP500APIExample();
-        example.login();
-        example.loadFiles();
-        System.out.println(example.measureFiles);
-        example.loadParamsList();
-        System.out.println(example.params);
-        example.analyseAll(0);
-        for (AnalyseResult list : example.results)
+    public void analyseAndShow(){
+        System.out.println(measureFiles);
+        System.out.println(params);
+        analyseAll(1);
+        for (AnalyseResult list : results)
             System.out.println(list.toStringFull());
-        ArrayList<String> list = example.createTeachParamString(ExtremeTypesCount,ExtremeCount);
+        ArrayList<String> list = createTeachParamString(ExtremeTypesCount,ExtremeCount);
         for(String vv : list){
             System.out.println(vv);
             }
+        }
+
+    public static void main(String ss[]){
+        LEP500APIExample example = new LEP500APIExample();
+        example.login();
+        example.loadParamsList();
+        //----------------------------------------------
+        example.loadFilesBySelection(3);
+        example.analyseAndShow();
+        example.loadFilesByLineName("cm-330");
+        example.analyseAndShow();
+        //-----------------------------------------------
         //HashMap<Integer, ConstValue> typeMap = Values.constMap().getGroupMapByValue("EXMode");
         //for(AnalyseResult result : example.results){
         //    System.out.println(result.toStringFull());
