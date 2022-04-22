@@ -3,14 +3,18 @@ package romanow.lep500.examples;
 import com.google.gson.Gson;
 import com.mongodb.BasicDBObject;
 import retrofit2.Call;
+import romanow.abc.core.API.APICallSynch;
 import romanow.abc.core.DBRequest;
 import romanow.abc.core.UniException;
 import romanow.abc.core.constants.ConstValue;
 import romanow.abc.core.constants.OidList;
 import romanow.abc.core.constants.Values;
+import romanow.abc.core.constants.ValuesBase;
 import romanow.abc.core.entity.EntityLink;
+import romanow.abc.core.entity.EntityList;
 import romanow.abc.core.entity.subjectarea.MFSelection;
 import romanow.abc.core.entity.subjectarea.MeasureFile;
+import romanow.abc.core.entity.users.User;
 import romanow.abc.core.mongo.*;
 import romanow.abc.desktop.APICall;
 import romanow.abc.desktop.console.ConsoleClient;
@@ -54,6 +58,23 @@ public class LEP500APIExample {
             }
         }
     private final static long userOid=2;    // Романов-2 Роденко-4 Петрова-3
+    public long getUserIdByTitle(final String name) {
+        try {
+            EntityList<User> list = new APICallSynch<EntityList<User>>() {
+                @Override
+                public Call<EntityList<User>> apiFun() {
+                    return client.getService().getUserList(client.getDebugToken(), ValuesBase.GetAllModeActual, 1);
+                }
+            }.call();
+            for (User user : list)
+                if (user.getTitle().equals(name))
+                    return user.getOid();
+            return 0;
+        } catch (UniException e) {
+            System.out.println("Ошибка чтения User: " + e.toString());
+            return 0;
+            }
+        }
     public void loadFilesByQuery(){
         if (!isOn)
             return;
@@ -102,13 +123,13 @@ public class LEP500APIExample {
                     }
                 };
         }
-    public void loadFilesByLineName(String line){
+    public void loadFilesByLineName(String line, long userId){
         if (!isOn)
             return;
         new APICall<ArrayList<MeasureFile>>(null){
             @Override
             public Call<ArrayList<MeasureFile>> apiFun() {
-                return client.getService2().getMeasureSelection(client.getDebugToken(),0,0,line,"");
+                return client.getService2().getMeasureSelection(client.getDebugToken(),0,userId,line,"");
             }
             @Override
             public void onSucess(ArrayList<MeasureFile> oo) {
@@ -116,13 +137,13 @@ public class LEP500APIExample {
             }
         };
     }
-    public void loadFilesByExpertNote(int note){
+    public void loadFilesByExpertNote(int note,long userId){
         if (!isOn)
             return;
         new APICall<ArrayList<MeasureFile>>(null){
             @Override
             public Call<ArrayList<MeasureFile>> apiFun() {
-                return client.getService2().getMeasureSelection(client.getDebugToken(),note,0,"","");
+                return client.getService2().getMeasureSelection(client.getDebugToken(),note,userId,"","");
             }
             @Override
             public void onSucess(ArrayList<MeasureFile> oo) {
@@ -213,13 +234,14 @@ public class LEP500APIExample {
     public void analyseAndShow(){
         System.out.println(measureFiles);
         System.out.println(params);
-        analyseAll(1);
+        analyseAll(0);
         for (AnalyseResult list : results)
             System.out.println(list.toStringFull());
         ArrayList<String> list = createTeachParamString(ExtremeTypesCount,ExtremeCount);
         for(String vv : list){
             System.out.println(vv);
             }
+        System.out.println("___________________________________________________________");
         }
 
     public static void main(String ss[]){
@@ -227,13 +249,19 @@ public class LEP500APIExample {
         example.login();
         example.loadParamsList();
         //----------------------------------------------
-        example.loadFilesBySelection(3);
+        long userId = example.getUserIdByTitle("Роденко");
+        if (userId==0){
+            System.out.println("Собственник не найден, выборка для всех");
+            }
+        example.loadFilesBySelection(1);
         example.analyseAndShow();
-        example.loadFilesByLineName("cm-330");
+        example.loadFilesByLineName("cm-330",userId);
         example.analyseAndShow();
-        example.loadFilesByExpertNote(Values.ESFailure);
+        example.loadFilesByExpertNote(Values.ESFailure,userId);
         example.analyseAndShow();
-        example.loadFilesByExpertNote(Values.ESWarning);
+        example.loadFilesByExpertNote(Values.ESWarning,userId);
+        example.analyseAndShow();
+        example.loadFilesByExpertNote(Values.ESIdeal,userId);
         example.analyseAndShow();
         //-----------------------------------------------
         //HashMap<Integer, ConstValue> typeMap = Values.constMap().getGroupMapByValue("EXMode");
