@@ -3,18 +3,26 @@ package romanow.lep500.examples;
 import com.google.gson.Gson;
 import com.mongodb.BasicDBObject;
 import retrofit2.Call;
+import romanow.abc.core.API.APICallSynch;
 import romanow.abc.core.DBRequest;
 import romanow.abc.core.UniException;
 import romanow.abc.core.constants.ConstValue;
 import romanow.abc.core.constants.OidList;
 import romanow.abc.core.constants.Values;
+import romanow.abc.core.constants.ValuesBase;
+import romanow.abc.core.entity.EntityLink;
+import romanow.abc.core.entity.EntityList;
+import romanow.abc.core.entity.subjectarea.MFSelection;
 import romanow.abc.core.entity.subjectarea.MeasureFile;
+import romanow.abc.core.entity.users.User;
 import romanow.abc.core.mongo.*;
 import romanow.abc.desktop.APICall;
 import romanow.abc.desktop.console.ConsoleClient;
 import romanow.abc.desktop.console.ConsoleLogin;
 import romanow.lep500.AnalyseResult;
+import romanow.lep500.AnalyseResultList;
 import romanow.lep500.LEP500Params;
+import romanow.lep500.Statistic;
 import romanow.lep500.fft.Extreme;
 import romanow.lep500.fft.ExtremeFacade;
 import romanow.lep500.fft.ExtremeList;
@@ -36,7 +44,7 @@ public class LEP500APIExample {
         Values.init();
         client = new ConsoleClient();
         client.setClientIP("217.71.138.9");
-        client.setClientPort(4567);
+        client.setClientPort(5001);
         try {
             client.startClient();
             ArrayList<String> params = new ArrayList<>();
@@ -52,7 +60,24 @@ public class LEP500APIExample {
             }
         }
     private final static long userOid=2;    // Романов-2 Роденко-4 Петрова-3
-    public void loadFiles(){
+    public long getUserIdByTitle(final String name) {
+        try {
+            EntityList<User> list = new APICallSynch<EntityList<User>>() {
+                @Override
+                public Call<EntityList<User>> apiFun() {
+                    return client.getService().getUserList(client.getDebugToken(), ValuesBase.GetAllModeActual, 1);
+                }
+            }.call();
+            for (User user : list)
+                if (user.getTitle().equals(name))
+                    return user.getOid();
+            return 0;
+        } catch (UniException e) {
+            System.out.println("Ошибка чтения User: " + e.toString());
+            return 0;
+            }
+        }
+    public void loadFilesByQuery(){
         if (!isOn)
             return;
         DBQueryList query =  new DBQueryList().
@@ -74,8 +99,57 @@ public class LEP500APIExample {
                         measureFiles.add(ss);
                     } catch (UniException e) {
                         System.out.println(e);
+                        }
                     }
                 }
+            };
+        }
+    public void loadFilesBySelection(long oid){
+        if (!isOn)
+            return;
+        new APICall<DBRequest>(null){
+            @Override
+            public Call<DBRequest> apiFun() {
+                return client.getService().getEntity(client.getDebugToken(),"MFSelection",oid,2);
+                }
+            @Override
+            public void onSucess(DBRequest oo) {
+                measureFiles.clear();
+                try {
+                    MFSelection selection = (MFSelection)oo.get(new Gson());
+                    for(EntityLink<MeasureFile> fileLink : selection.getFiles())
+                    measureFiles.add(fileLink.getRef());
+                    } catch (UniException e) {
+                        System.out.println(e);
+                        }
+                    }
+                };
+        }
+    public void loadFilesByLineName(String line, long userId){
+        if (!isOn)
+            return;
+        new APICall<ArrayList<MeasureFile>>(null){
+            @Override
+            public Call<ArrayList<MeasureFile>> apiFun() {
+                return client.getService2().getMeasureSelection(client.getDebugToken(),0,userId,line,"");
+            }
+            @Override
+            public void onSucess(ArrayList<MeasureFile> oo) {
+                measureFiles = oo;
+            }
+        };
+    }
+    public void loadFilesByExpertNote(int note,long userId){
+        if (!isOn)
+            return;
+        new APICall<ArrayList<MeasureFile>>(null){
+            @Override
+            public Call<ArrayList<MeasureFile>> apiFun() {
+                return client.getService2().getMeasureSelection(client.getDebugToken(),note,userId,"","");
+            }
+            @Override
+            public void onSucess(ArrayList<MeasureFile> oo) {
+                measureFiles = oo;
             }
         };
     }
@@ -100,11 +174,25 @@ public class LEP500APIExample {
             }
         };
     }
+
+
+    public void showFirstSecondPeak(){
+        System.out.println("Среднее по первому пику и второго к первому");
+        AnalyseResultList list = new AnalyseResultList(results);
+        Statistic cc[] = list.calcFirstFreq();
+        Statistic cc2[] = list.calcSecondFreq();
+        for(int i=0;i<cc.length;i++)
+            System.out.println(String.format("n=%d Fmid=%6.3f sto=%6.3f n=%d Fmid=%6.3f sto=%6.3f",
+                cc[i].getCount(),(float)cc[i].middle(),(float)cc[i].stdOtkl(),
+                cc2[i].getCount(),(float)cc2[i].middle(),(float)cc2[i].stdOtkl()
+                ));
+            }
     public void analyseAll(int paramIdx){
+        results.clear();
         OidList list = new OidList();
         for(MeasureFile ss : measureFiles){
             list.oids.add(ss.getOid());
-        }
+            }
         new APICall<ArrayList<AnalyseResult>>(null){
             @Override
             public Call<ArrayList<AnalyseResult>> apiFun() {
@@ -152,25 +240,47 @@ public class LEP500APIExample {
                         }
                     }
                 }
+            ss.append(","+measureFiles.get(i).getExpertResult());
             out.add(ss.toString());
             }
         return out;
         }
 
-    public static void main(String ss[]){
-        LEP500APIExample example = new LEP500APIExample();
-        example.login();
-        example.loadFiles();
-        System.out.println(example.measureFiles);
-        example.loadParamsList();
-        System.out.println(example.params);
-        example.analyseAll(0);
-        for (AnalyseResult list : example.results)
-            System.out.println(list.toStringFull());
-        ArrayList<String> list = example.createTeachParamString(ExtremeTypesCount,ExtremeCount);
+    public void analyseAndShow(){
+        for(MeasureFile file : measureFiles)
+            System.out.println(file);
+        System.out.println(params);
+        analyseAll(0);
+        showFirstSecondPeak();
+        //for (AnalyseResult list : results)
+        //    System.out.println(list.toStringFull());
+        ArrayList<String> list = createTeachParamString(ExtremeTypesCount,ExtremeCount);
         for(String vv : list){
             System.out.println(vv);
             }
+        System.out.println("___________________________________________________________");
+        }
+
+    public static void main(String ss[]){
+        LEP500APIExample example = new LEP500APIExample();
+        example.login();
+        example.loadParamsList();
+        //----------------------------------------------
+        long userId = example.getUserIdByTitle("Роденко");
+        if (userId==0){
+            System.out.println("Собственник не найден, выборка для всех");
+            }
+        example.loadFilesBySelection(1);
+        example.analyseAndShow();
+        example.loadFilesByLineName("cm-330",userId);
+        example.analyseAndShow();
+        example.loadFilesByExpertNote(Values.ESFailure,userId);
+        example.analyseAndShow();
+        example.loadFilesByExpertNote(Values.ESWarning,userId);
+        example.analyseAndShow();
+        example.loadFilesByExpertNote(Values.ESIdeal,userId);
+        example.analyseAndShow();
+        //-----------------------------------------------
         //HashMap<Integer, ConstValue> typeMap = Values.constMap().getGroupMapByValue("EXMode");
         //for(AnalyseResult result : example.results){
         //    System.out.println(result.toStringFull());
