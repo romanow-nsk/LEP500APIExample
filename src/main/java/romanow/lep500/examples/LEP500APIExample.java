@@ -19,10 +19,7 @@ import romanow.abc.core.mongo.*;
 import romanow.abc.desktop.APICall;
 import romanow.abc.desktop.console.ConsoleClient;
 import romanow.abc.desktop.console.ConsoleLogin;
-import romanow.lep500.AnalyseResult;
-import romanow.lep500.AnalyseResultList;
-import romanow.lep500.LEP500Params;
-import romanow.lep500.Statistic;
+import romanow.lep500.*;
 import romanow.lep500.fft.Extreme;
 import romanow.lep500.fft.ExtremeFacade;
 import romanow.lep500.fft.ExtremeList;
@@ -180,13 +177,20 @@ public class LEP500APIExample {
         System.out.println("Среднее по первому пику и второго к первому");
         AnalyseResultList list = new AnalyseResultList(results);
         Statistic cc[] = list.calcFirstFreq();
-        Statistic cc2[] = list.calcSecondFreq();
         for(int i=0;i<cc.length;i++)
-            System.out.println(String.format("n=%d Fmid=%6.3f sto=%6.3f n=%d Fmid=%6.3f sto=%6.3f",
-                cc[i].getCount(),(float)cc[i].middle(),(float)cc[i].stdOtkl(),
-                cc2[i].getCount(),(float)cc2[i].middle(),(float)cc2[i].stdOtkl()
-                ));
+            System.out.println(String.format("n=%d Fmid=%6.3f sto=%6.3f",
+                cc[i].getCount(),(float)cc[i].middle(),(float)cc[i].stdOtkl()));
             }
+
+    public void showPeakPlaces(){
+        AnalyseResultList list = new AnalyseResultList(results);
+        ArrayList<PeakPlace> res = list.calcPeakPlaces();
+        System.out.println("Суммарный вес пиков:");
+        System.out.println("частота ∑мест ∑значений ∑мест*значений");
+        for(PeakPlace pp : res)
+            System.out.println(pp);
+        }
+
     public void analyseAll(int paramIdx){
         results.clear();
         OidList list = new OidList();
@@ -246,19 +250,21 @@ public class LEP500APIExample {
         return out;
         }
 
-    public void analyseAndShow(){
+    public void analyseAndShow(boolean full){
         for(MeasureFile file : measureFiles)
             System.out.println(file);
         System.out.println(params);
         analyseAll(0);
-        showFirstSecondPeak();
+        //showFirstSecondPeak();
+        showPeakPlaces();
         //for (AnalyseResult list : results)
         //    System.out.println(list.toStringFull());
-        ArrayList<String> list = createTeachParamString(ExtremeTypesCount,ExtremeCount);
-        for(String vv : list){
-            System.out.println(vv);
+        if (full){
+            ArrayList<String> list = createTeachParamString(ExtremeTypesCount,ExtremeCount);
+            for(String vv : list) {
+                System.out.println(vv);
+                }
             }
-        System.out.println("___________________________________________________________");
         }
 
     public static void main(String ss[]){
@@ -270,16 +276,24 @@ public class LEP500APIExample {
         if (userId==0){
             System.out.println("Собственник не найден, выборка для всех");
             }
+        System.out.println("Выборка 1-----------------------------------------------------------------------------------");
         example.loadFilesBySelection(1);
-        example.analyseAndShow();
+        example.analyseAndShow(false);
+        System.out.println("cm-330--------------------------------------------------------------------------------------");
         example.loadFilesByLineName("cm-330",userId);
-        example.analyseAndShow();
+        example.analyseAndShow(false);
+        System.out.println("Все аварийные -------------------------------------------------------------------------------");
         example.loadFilesByExpertNote(Values.ESFailure,userId);
-        example.analyseAndShow();
+        example.analyseAndShow(false);
+        System.out.println("Все предупр. -------------------------------------------------------------------------------");
         example.loadFilesByExpertNote(Values.ESWarning,userId);
-        example.analyseAndShow();
+        example.analyseAndShow(false);
+        System.out.println("Все идеальные ------------------------------------------------------------------------------");
         example.loadFilesByExpertNote(Values.ESIdeal,userId);
-        example.analyseAndShow();
+        example.analyseAndShow(false);
+        System.out.println("Все норма ----------------------------------------------------------------------------------");
+        example.loadFilesByExpertNote(Values.ESNormal,userId);
+        example.analyseAndShow(false);
         //-----------------------------------------------
         //HashMap<Integer, ConstValue> typeMap = Values.constMap().getGroupMapByValue("EXMode");
         //for(AnalyseResult result : example.results){
