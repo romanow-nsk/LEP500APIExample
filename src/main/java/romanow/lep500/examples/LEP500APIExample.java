@@ -122,6 +122,26 @@ public class LEP500APIExample {
                     }
                 };
         }
+    public void loadFilesById(long oid){
+        if (!isOn)
+            return;
+        new APICall<DBRequest>(null){
+            @Override
+            public Call<DBRequest> apiFun() {
+                return client.getService().getEntity(client.getDebugToken(),"MeasureFile",oid,1);
+            }
+            @Override
+            public void onSucess(DBRequest oo) {
+                measureFiles.clear();
+                try {
+                    MeasureFile file = (MeasureFile) oo.get(new Gson());
+                    measureFiles.add(file);
+                } catch (UniException e) {
+                    System.out.println(e);
+                }
+            }
+        };
+    }
     public void loadFilesByLineName(String line, long userId){
         if (!isOn)
             return;
@@ -294,6 +314,12 @@ public class LEP500APIExample {
         example.analyseAndShow(full);
         System.out.println("Все норма ----------------------------------------------------------------------------------");
         example.loadFilesByExpertNote(Values.ESNormal,userId);
+        example.analyseAndShow(full);
+        System.out.println("Нестандартные (с колотушкой) ---------------------------------------------------------------");
+        example.loadFilesByExpertNote(Values.ESAnomal,userId);
+        example.analyseAndShow(full);
+        System.out.println("Нестандартный (с колотушкой) id=116 --------------------------------------------------------");
+        example.loadFilesById(116);
         example.analyseAndShow(full);
         //-----------------------------------------------
         //HashMap<Integer, ConstValue> typeMap = Values.constMap().getGroupMapByValue("EXMode");
