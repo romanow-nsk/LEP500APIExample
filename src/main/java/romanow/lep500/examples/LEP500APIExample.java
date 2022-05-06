@@ -206,7 +206,7 @@ public class LEP500APIExample {
         AnalyseResultList list = new AnalyseResultList(results);
         ArrayList<PeakPlace> res = list.calcPeakPlaces();
         System.out.println("Суммарный вес пиков:");
-        System.out.println("частота кол-во ∑мест ∑значений ∑мест*значений");
+        System.out.println("частота кол-во ∑мест ∑значений ∑мест*знач. декремент");
         for(PeakPlace pp : res)
             System.out.println(pp);
         }
@@ -274,7 +274,7 @@ public class LEP500APIExample {
         for(MeasureFile file : measureFiles)
             System.out.println(file);
         System.out.println(params);
-        analyseAll(0);
+        analyseAll(1);      // Норма-2
         //showFirstSecondPeak();
         showPeakPlaces();
         //for (AnalyseResult list : results)
@@ -293,12 +293,13 @@ public class LEP500APIExample {
         example.loadParamsList();
         //----------------------------------------------
         long userId = example.getUserIdByTitle("Роденко");
+        long userId2 = example.getUserIdByTitle("Романов-2");
         if (userId==0){
             System.out.println("Собственник не найден, выборка для всех");
             }
         boolean full=true;
-        System.out.println("Выборка 1-----------------------------------------------------------------------------------");
-        example.loadFilesBySelection(1);
+        System.out.println("Выборка 4-----------------------------------------------------------------------------------");
+        example.loadFilesBySelection(4);
         example.analyseAndShow(full);
         System.out.println("cm-330--------------------------------------------------------------------------------------");
         example.loadFilesByLineName("cm-330",userId);
