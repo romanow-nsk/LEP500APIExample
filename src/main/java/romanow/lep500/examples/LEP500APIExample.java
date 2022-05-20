@@ -1,12 +1,10 @@
 package romanow.lep500.examples;
 
 import com.google.gson.Gson;
-import com.mongodb.BasicDBObject;
 import retrofit2.Call;
 import romanow.abc.core.API.APICallSynch;
 import romanow.abc.core.DBRequest;
 import romanow.abc.core.UniException;
-import romanow.abc.core.constants.ConstValue;
 import romanow.abc.core.constants.OidList;
 import romanow.abc.core.constants.Values;
 import romanow.abc.core.constants.ValuesBase;
@@ -26,8 +24,6 @@ import romanow.lep500.fft.ExtremeList;
 import romanow.lep500.fft.ExtremeNull;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
 public class LEP500APIExample {
     public final static int ExtremeCount=5;
@@ -56,7 +52,6 @@ public class LEP500APIExample {
             return "Клиент: "+e.toString();
             }
         }
-    private final static long userOid=2;    // Романов-2 Роденко-4 Петрова-3
     public long getUserIdByTitle(final String name) {
         try {
             EntityList<User> list = new APICallSynch<EntityList<User>>() {
@@ -212,24 +207,31 @@ public class LEP500APIExample {
             System.out.println(pp);
         }
 
-    public void analyseAll(int paramIdx){
+    public void analyseAll(boolean full, int paramIdx,final int groupSize){
         results.clear();
-        OidList list = new OidList();
-        for(MeasureFile ss : measureFiles){
-            list.oids.add(ss.getOid());
-            }
-        new APICall<ArrayList<AnalyseResult>>(null){
-            @Override
-            public Call<ArrayList<AnalyseResult>> apiFun() {
-                return client.getService2().analyse(client.getDebugToken(),params.get(paramIdx).getOid(),list);
-            }
-            @Override
-            public void onSucess(ArrayList<AnalyseResult> oo) {
-                for(AnalyseResult dd : oo){
-                    results.add(dd);
+        if (full)
+            System.out.print("idx=");
+        for(int idx=0;idx<measureFiles.size();idx+=groupSize) {
+            OidList list = new OidList();
+            for (int ii=idx; ii<measureFiles.size() && ii-idx < groupSize; ii++)
+                list.oids.add(measureFiles.get(ii).getOid());
+            if (full)
+                System.out.print(idx+" ");
+            new APICall<ArrayList<AnalyseResult>>(null) {
+                @Override
+                public Call<ArrayList<AnalyseResult>> apiFun() {
+                    return client.getService2().analyse(client.getDebugToken(), params.get(paramIdx).getOid(), list);
                     }
-                }
-            };
+                @Override
+                public void onSucess(ArrayList<AnalyseResult> oo) {
+                    for (AnalyseResult dd : oo) {
+                        results.add(dd);
+                        }
+                    }
+                };
+            }
+        if (full)
+            System.out.println();
         }
 
     public static String replace(double vv){
@@ -271,11 +273,11 @@ public class LEP500APIExample {
         return out;
         }
 
-    public void analyseAndShow(boolean full){
+    public void analyseAndShow(boolean full, int paramIdx,int groupSize){
         for(MeasureFile file : measureFiles)
             System.out.println(file);
         System.out.println(params);
-        analyseAll(1);      // Норма-2
+        analyseAll(full,paramIdx,groupSize);      // Рабочий-1
         //showFirstSecondPeak();
         showPeakPlaces();
         //for (AnalyseResult list : results)
@@ -299,42 +301,32 @@ public class LEP500APIExample {
             System.out.println("Собственник не найден, выборка для всех");
             }
         boolean full=true;
-        System.out.println("Выборка 4-----------------------------------------------------------------------------------");
-        example.loadFilesBySelection(4);
-        example.analyseAndShow(full);
-        System.out.println("cm-330--------------------------------------------------------------------------------------");
-        example.loadFilesByLineName("cm-330",userId);
-        example.analyseAndShow(full);
-        System.out.println("Все аварийные -------------------------------------------------------------------------------");
-        example.loadFilesByExpertNote(Values.ESFailure,userId);
-        example.analyseAndShow(full);
-        System.out.println("Все предупр. -------------------------------------------------------------------------------");
-        example.loadFilesByExpertNote(Values.ESWarning,userId);
-        example.analyseAndShow(full);
-        System.out.println("Все идеальные ------------------------------------------------------------------------------");
-        example.loadFilesByExpertNote(Values.ESIdeal,userId);
-        example.analyseAndShow(full);
-        System.out.println("Все норма ----------------------------------------------------------------------------------");
-        example.loadFilesByExpertNote(Values.ESNormal,userId);
-        example.analyseAndShow(full);
-        System.out.println("Нестандартные (с колотушкой) ---------------------------------------------------------------");
-        example.loadFilesByExpertNote(Values.ESAnomal,userId);
-        example.analyseAndShow(full);
-        System.out.println("Нестандартный (с колотушкой) id=116 --------------------------------------------------------");
-        example.loadFilesById(116);
-        example.analyseAndShow(full);
-        System.out.println("Все оцененные Роденко ---------------------------------------------------------------------");
-        example.loadFilesWithExpertNote(userId);
-        example.analyseAndShow(full);
-        //-----------------------------------------------
-        //HashMap<Integer, ConstValue> typeMap = Values.constMap().getGroupMapByValue("EXMode");
-        //for(AnalyseResult result : example.results){
-        //    System.out.println(result.toStringFull());
-        //    for (ExtremeList ff : result.data){
-        //        System.out.println("Тип пиков: "+typeMap.get(ff.getExtremeMode()).title());
-        //       for(Extreme extreme : ff.data()){
-        //        }
-        //    }
+        //System.out.println("Выборка 4-----------------------------------------------------------------------------------");
+        //example.loadFilesBySelection(4);
+        //example.analyseAndShow(full);
+        //System.out.println("cm-330--------------------------------------------------------------------------------------");
+        //example.loadFilesByLineName("cm-330",userId);
+        //example.analyseAndShow(full);
+        //System.out.println("Все аварийные -------------------------------------------------------------------------------");
+        //example.loadFilesByExpertNote(Values.ESFailure,userId);
+        //example.analyseAndShow(full);
+        //System.out.println("Все предупр. -------------------------------------------------------------------------------");
+        //example.loadFilesByExpertNote(Values.ESWarning,userId);
+        //example.analyseAndShow(full);
+        //System.out.println("Все идеальные ------------------------------------------------------------------------------");
+        //example.loadFilesByExpertNote(Values.ESIdeal,userId);
+        //example.analyseAndShow(full);
+        //System.out.println("Все норма ----------------------------------------------------------------------------------");
+        //example.loadFilesByExpertNote(Values.ESNormal,userId);
+        //example.analyseAndShow(full);
+        //System.out.println("Нестандартные (с колотушкой) ---------------------------------------------------------------");
+        //example.loadFilesByExpertNote(Values.ESAnomal,userId);
+        //example.analyseAndShow(full);
+        //System.out.println("Нестандартный (с колотушкой) id=116 --------------------------------------------------------");
+        //example.loadFilesById(116);
+        //example.analyseAndShow(full);
+        System.out.println("Все оцененные Романов ---------------------------------------------------------------------");
+        example.loadFilesWithExpertNote(userId2);
+        example.analyseAndShow(full,0,10);
         }
-        // Все оцененные ------------------------------------------------------------------------------------------
 }
