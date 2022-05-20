@@ -74,11 +74,12 @@ public class LEP500APIExample {
             return 0;
             }
         }
-    public void loadFilesByQuery(){
+    public void loadFilesWithExpertNote(long userOid){
         if (!isOn)
             return;
         DBQueryList query =  new DBQueryList().
-                add(new DBQueryInt(I_DBQuery.ModeNEQ,"expertResult",0)).
+                add(new DBQueryInt(I_DBQuery.ModeNEQ,"expertResult",Values.ESNotSupported)).
+                add(new DBQueryInt(I_DBQuery.ModeNEQ,"expertResult",Values.ESNotSet)).
                 add(new DBQueryLong("userId",userOid)).
                 add(new DBQueryBoolean("valid",true));
         final String xmlQuery = new DBXStream().toXML(query);
@@ -321,6 +322,9 @@ public class LEP500APIExample {
         example.analyseAndShow(full);
         System.out.println("Нестандартный (с колотушкой) id=116 --------------------------------------------------------");
         example.loadFilesById(116);
+        example.analyseAndShow(full);
+        System.out.println("Все оцененные Роденко ---------------------------------------------------------------------");
+        example.loadFilesWithExpertNote(userId);
         example.analyseAndShow(full);
         //-----------------------------------------------
         //HashMap<Integer, ConstValue> typeMap = Values.constMap().getGroupMapByValue("EXMode");
