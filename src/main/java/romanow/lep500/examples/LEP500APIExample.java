@@ -252,6 +252,10 @@ public class LEP500APIExample {
         for (int i=0;i<results.size();i++){
             StringBuffer ss = new StringBuffer();
             AnalyseResult result = results.get(i);
+            if (!result.valid){
+                System.out.println("Ошибка анализа: "+result.getTitle()+"\n"+result.message);
+                continue;
+                }
             for(int k=0;k<typesCount && k<result.data.size();k++){
                 ExtremeFacade facade = facades[k];
                 ExtremeList list = result.data.get(k);
